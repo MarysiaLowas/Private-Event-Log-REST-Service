@@ -1,5 +1,7 @@
 #!flask/bin/python
 from datetime import datetime
+from calendar import timegm
+from operator import itemgetter
 
 from flask import Flask, jsonify, abort, make_response, request
 
@@ -9,16 +11,79 @@ events = [
     {
         'id': 1,
         'text': "I just won a lottery #update @all",
-        'category': "#update",
-        'person': "@all",
-        'time': "now"
+        'category': "update",
+        'person': "all",
+        'time': 1421513660
     },
     {
         'id': 2,
         'text': "It's fantastic!",
-        'category': "#warn",
-        'person': "@john",
-        'time': "now"
+        'category': "warn",
+        'person': "john",
+        'time': 1421603661
+    },
+    {
+        'id': 3,
+        'text': "It should be at the beginning but time is a strange animal #update @all-friends",
+        'category': "update",
+        'person': "all-friends",
+        'time': 1420912461
+    },
+    {
+        'id': 4,
+        'text': "The forth message #warn @john",
+        'category': "warn",
+        'person': "john",
+        'time': 1421603721
+    },
+    {
+        'id': 5,
+        'text': "This can be empty",
+        'category': "update",
+        'person': "all",
+        'time': 1421603781
+    },
+    {
+        'id': 6,
+        'text': "What do you think? #poll @all-friends",
+        'category': "poll",
+        'person': "all-friends",
+        'time': 1421603841
+    },
+    {
+        'id': 7,
+        'text': "Why so serious? #poll @all",
+        'category': "poll",
+        'person': "all",
+        'time': 1421603901
+    },
+    {
+        'id': 8,
+        'text': "The air is really bad today #warn @john",
+        'category': "warn",
+        'person': "john",
+        'time': 1421603961
+    },
+    {
+        'id': 9,
+        'text': "Sunday night maybe better #update @john",
+        'category': "update",
+        'person': "john",
+        'time': 1421604081
+    },
+    {
+        'id': 10,
+        'text': "It's almost Monday #update @all-friends",
+        'category': "update",
+        'person': "all-friends",
+        'time': 1421604141
+    },
+    {
+        'id': 11,
+        'text': "Will the slicing work? #poll @all-friends",
+        'category': "poll",
+        'person': "all-friends",
+        'time': 1421604201
     }
 ]
 
@@ -33,14 +98,76 @@ def find_element_by_id(element_id, element_list):
 def parse_string(text):
     listify = text.split()
     # defaults
-    person = "@all"
-    category = "#update"
+    person = "all"
+    category = "update"
     for i in listify:
         if i.startswith("#"):
-            category = i
+            category = i.strip("#")
         elif i.startswith("@"):
-            person = i
+            person = i.strip("@")
     return category, person
+
+
+def sort_events(event_list):
+    sorted_list = sorted(event_list, key=itemgetter('time'), reverse=True)
+    return sorted_list
+
+
+def select_events_by(field, value, event_list, count=10):
+    selected_list = []
+    if field is None:
+        return event_list[0:count]
+    elif field == "time":
+        value = int(value)
+        for i in event_list:
+            if i[field] >= value:
+                selected_list.append(i)
+            if len(selected_list) == count:
+                break
+    else:
+        for i in event_list:
+            if i[field] == value:
+                selected_list.append(i)
+            if len(selected_list) == count:
+                break
+    return selected_list
+
+
+def make_time():
+    time = datetime.utcnow()
+    time = timegm(time.timetuple())
+    return time
+
+
+@app.route('/feeds/api/v1.0/events')
+def get_last_ten():
+    last_events = select_events_by(None, None, events)
+    return jsonify({'events': last_events})
+
+
+@app.route('/feeds/api/v1.0/events/<string:event_field>/<string:event_value>')
+def get_last_by_field(event_field, event_value):
+    events_by_field = select_events_by(event_field, event_value, events)
+    return jsonify({'events': events_by_field})
+
+
+@app.route('/feeds/api/v1.0/events', methods=['POST'])
+def add_event():
+    global events
+    if not request.data:
+        abort(400)
+    category, person = parse_string(request.data)
+    time = make_time()
+    event = {
+        'id': events[-1]['id'] + 1,
+        'text': request.data,
+        'category': category,
+        'person': person,
+        'time': time
+    }
+    events.append(event)
+    events = sort_events(events)
+    return jsonify({'event': event}), 201
 
 
 @app.route('/feeds/api/v1.0')
@@ -48,9 +175,10 @@ def hello():
     return "Hello, World!"
 
 
-@app.route('/feeds/api/v1.0/events')
-def get_events():
-    return jsonify({'events': events})
+@app.route('/feeds/api/v1.0/events/all')
+def get_all_events():
+    sorted_events = sort_events(events)
+    return jsonify({'events': sorted_events})
 
 
 @app.route('/feeds/api/v1.0/events/<int:event_id>', methods=['GET'])
@@ -61,26 +189,11 @@ def get_event(event_id):
     return jsonify({'event': event})
 
 
-@app.route('/feeds/api/v1.0/events', methods=['POST'])
-def add_event():
-    if not request.data:
-        abort(400)
-    category, person = parse_string(request.data)
-    event = {
-        'id': events[-1]['id'] + 1,
-        'text': request.data,
-        'category': category,
-        'person': person,
-        'time': datetime.now()
-    }
-    events.append(event)
-    return jsonify({'event': event}), 201
-
-
 @app.errorhandler(404)
 def not_found(error):
     return make_response(jsonify({'error': 'Not found'}), 404)
 
 
 if __name__ == '__main__':
+    events = sort_events(events)
     app.run(debug=True)
