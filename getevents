@@ -1,0 +1,86 @@
+#!flask/bin/python
+from datetime import datetime
+
+from flask import Flask, jsonify, abort, make_response, request
+
+app = Flask(__name__)
+
+events = [
+    {
+        'id': 1,
+        'text': "I just won a lottery #update @all",
+        'category': "#update",
+        'person': "@all",
+        'time': "now"
+    },
+    {
+        'id': 2,
+        'text': "It's fantastic!",
+        'category': "#warn",
+        'person': "@john",
+        'time': "now"
+    }
+]
+
+
+def find_element_by_id(element_id, element_list):
+    for i in element_list:
+        if i['id'] == element_id:
+            return i
+    return None
+
+
+def parse_string(text):
+    listify = text.split()
+    # defaults
+    person = "@all"
+    category = "#update"
+    for i in listify:
+        if i.startswith("#"):
+            category = i
+        elif i.startswith("@"):
+            person = i
+    return category, person
+
+
+@app.route('/feeds/api/v1.0')
+def hello():
+    return "Hello, World!"
+
+
+@app.route('/feeds/api/v1.0/events')
+def get_events():
+    return jsonify({'events': events})
+
+
+@app.route('/feeds/api/v1.0/events/<int:event_id>', methods=['GET'])
+def get_event(event_id):
+    event = find_element_by_id(event_id, events)
+    if event is None:
+        abort(404)
+    return jsonify({'event': event})
+
+
+@app.route('/feeds/api/v1.0/events', methods=['POST'])
+def add_event():
+    if not request.data:
+        abort(400)
+    category, person = parse_string(request.data)
+    event = {
+        'id': events[-1]['id'] + 1,
+        'text': request.data,
+        'category': category,
+        'person': person,
+        'time': datetime.now()
+    }
+    events.append(event)
+    return jsonify({'event': event}), 201
+
+
+@app.errorhandler(404)
+def not_found(error):
+    return make_response(jsonify({'error': 'Not found'}), 404)
+
+
+if __name__ == '__main__':
+    app.run(debug=True)
