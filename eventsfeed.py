@@ -5,6 +5,8 @@ from operator import itemgetter
 
 from flask import Flask, jsonify, abort, make_response, request
 
+from event_handler import EventHandler
+
 app = Flask(__name__)
 
 events = [
@@ -87,86 +89,25 @@ events = [
     }
 ]
 
-
-def find_element_by_id(element_id, element_list):
-    for i in element_list:
-        if i['id'] == element_id:
-            return i
-    return None
-
-
-def parse_string(text):
-    listify = text.split()
-    # defaults
-    person = "all"
-    category = "update"
-    for i in listify:
-        if i.startswith("#"):
-            category = i.strip("#")
-        elif i.startswith("@"):
-            person = i.strip("@")
-    return category, person
-
-
-def sort_events(event_list):
-    sorted_list = sorted(event_list, key=itemgetter('time'), reverse=True)
-    return sorted_list
-
-
-def select_events_by(field, value, event_list, count=10):
-    selected_list = []
-    if field is None:
-        return event_list[0:count]
-    elif field == "time":
-        value = int(value)
-        for i in event_list:
-            if i[field] >= value:
-                selected_list.append(i)
-            if len(selected_list) == count:
-                break
-    else:
-        for i in event_list:
-            if i[field] == value:
-                selected_list.append(i)
-            if len(selected_list) == count:
-                break
-    return selected_list
-
-
-def make_time():
-    time = datetime.utcnow()
-    time = timegm(time.timetuple())
-    return time
-
+myService = EventHandler(events)
 
 @app.route('/feeds/api/v1.0/events')
 def get_last_ten():
-    last_events = select_events_by(None, None, events)
+    last_events = myService.get_last_ten()
     return jsonify({'events': last_events})
 
 
 @app.route('/feeds/api/v1.0/events/<string:event_field>/<string:event_value>')
 def get_last_by_field(event_field, event_value):
-    events_by_field = select_events_by(event_field, event_value, events)
+    events_by_field = myService.get_last_by_field(event_field, event_value)
     return jsonify({'events': events_by_field})
 
 
 @app.route('/feeds/api/v1.0/events', methods=['POST'])
 def add_event():
-    global events
     if not request.data:
         abort(400)
-    category, person = parse_string(request.data)
-    time = make_time()
-    event = {
-        'id': events[-1]['id'] + 1,
-        'text': request.data,
-        'category': category,
-        'person': person,
-        'time': time
-    }
-    events.append(event)
-    events = sort_events(events)
+    event = myService.add_event(request.data)
     return jsonify({'event': event}), 201
 
 
@@ -177,13 +118,13 @@ def hello():
 
 @app.route('/feeds/api/v1.0/events/all')
 def get_all_events():
-    sorted_events = sort_events(events)
-    return jsonify({'events': sorted_events})
+    all_events = myService.get_all_events()
+    return jsonify({'events': all_events})
 
 
 @app.route('/feeds/api/v1.0/events/<int:event_id>', methods=['GET'])
 def get_event(event_id):
-    event = find_element_by_id(event_id, events)
+    event = myService.get_event(event_id)
     if event is None:
         abort(404)
     return jsonify({'event': event})
@@ -195,5 +136,4 @@ def not_found(error):
 
 
 if __name__ == '__main__':
-    events = sort_events(events)
     app.run(debug=True)
