@@ -1,7 +1,4 @@
 #!flask/bin/python
-from datetime import datetime
-from calendar import timegm
-from operator import itemgetter
 
 from flask import Flask, jsonify, abort, make_response, request
 
@@ -88,7 +85,6 @@ events = [
         'time': 1421604201
     }
 ]
-
 myService = EventHandler(events)
 
 @app.route('/feeds/api/v1.0/events')
@@ -124,7 +120,7 @@ def get_all_events():
 
 @app.route('/feeds/api/v1.0/events/<int:event_id>', methods=['GET'])
 def get_event(event_id):
-    event = myService.get_event(event_id)
+    event = myService.get_event_by_id(event_id)
     if event is None:
         abort(404)
     return jsonify({'event': event})

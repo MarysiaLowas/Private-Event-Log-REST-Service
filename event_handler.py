@@ -2,19 +2,19 @@ from datetime import datetime
 from calendar import timegm
 from operator import itemgetter
 
-from flask import Flask, jsonify, abort, make_response, request
-
 
 class EventHandler(object):
 
     def __init__(self, event_list):
         self.event_list = self.sort_events(event_list)
 
-    def sort_events(self, list_to_sort):
+    @staticmethod
+    def sort_events(list_to_sort):
         sorted_list = sorted(list_to_sort, key=itemgetter('time'), reverse=True)
         return sorted_list
 
-    def parse_string(self, text):
+    @staticmethod
+    def parse_string(text):
         words_list = text.split()
         # defaults
         person = "all"
@@ -26,7 +26,10 @@ class EventHandler(object):
                 person = i.strip("@")
         return category, person
 
-    def make_time(self):
+    @staticmethod
+    def make_time():
+        # the method truncates milliseconds
+        # to fit nicely in the URL
         time = datetime.utcnow()
         time = timegm(time.timetuple())
         return time
@@ -37,14 +40,14 @@ class EventHandler(object):
                 return i
         return None
 
-    def select_events_by(self, field, value, count=10):
+    def select_events(self, field=None, value=None, count=10):
         selected_list = []
         if field is None:
             return self.event_list[0:count]
         elif field == "time":
             value = int(value)
             for i in self.event_list:
-                if i[field] >= value:
+                if i[field] <= value:
                     selected_list.append(i)
                 if len(selected_list) == count:
                     break
@@ -60,25 +63,25 @@ class EventHandler(object):
         return self.event_list
 
     def get_last_ten(self):
-        return self.select_events_by(None, None)
+        return self.select_events()
 
     def get_last_by_field(self, event_field, event_value):
-        return self.select_events_by(event_field, event_value)
+        return self.select_events(event_field, event_value)
 
     def add_event(self, feed):
         category, person = self.parse_string(feed)
         time = self.make_time()
         event = {
-            'id': self.event_list[-1]['id'] + 1,
+            'id': len(self.event_list) + 1,
             'text': feed,
             'category': category,
             'person': person,
             'time': time
         }
         self.event_list.append(event)
-        self.event_list = self.sort_events()
+        self.event_list = self.sort_events(self.event_list)
         return event
 
-    def get_event(self, event_id):
+    def get_event_by_id(self, event_id):
         event = self.find_element_by_id(event_id)
         return event
