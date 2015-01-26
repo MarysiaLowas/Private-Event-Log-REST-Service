@@ -10,7 +10,8 @@ class EventHandler(object):
 
     @staticmethod
     def sort_events(list_to_sort):
-        sorted_list = sorted(list_to_sort, key=itemgetter('time'), reverse=True)
+        sorted_list = sorted(list_to_sort, key=itemgetter('time'),
+                             reverse=True)
         return sorted_list
 
     @staticmethod

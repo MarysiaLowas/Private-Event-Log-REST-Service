@@ -4,7 +4,7 @@ import unittest
 
 from flask import Flask, json
 
-from event_handler import EventHandler
+from eventhandler import EventHandler
 import eventsfeed
 
 
@@ -87,7 +87,8 @@ class EventHandlerTestCase(unittest.TestCase):
             },
             {
                 'id': 3,
-                'text': "It should be at the beginning but time is a strange animal #update @all-friends",
+                'text': "It should be at the beginning but time is a strange "
+                        "animal #update @all-friends",
                 'category': "update",
                 'person': "all-friends",
                 'time': 1420912461
@@ -96,21 +97,21 @@ class EventHandlerTestCase(unittest.TestCase):
 
     def setUp(self):
         events = []
-        self.myService = EventHandler(events)
+        self.my_service = EventHandler(events)
 
     def test_get_last_with_empty_list(self):
-        results = self.myService.get_last_ten()
+        results = self.my_service.get_last_ten()
         self.assertEqual(results, [])
 
     def test_get_last_by_field_empty(self):
-        results = self.myService.get_last_by_field('category', 'value')
+        results = self.my_service.get_last_by_field('category', 'value')
         self.assertEqual(results, [])
 
     def test_add_event_parse_no_defaults(self):
-        results = self.myService.add_event(self.feed_with_all)
+        results = self.my_service.add_event(self.feed_with_all)
         # make_time truncates milliseconds
         # risky if we are on a break of a second
-        time = self.myService.make_time()
+        time = self.my_service.make_time()
         expected = {
             'id': 1,
             'text': 'What a fantastic day #update @john',
@@ -121,10 +122,10 @@ class EventHandlerTestCase(unittest.TestCase):
         self.assertDictEqual(results, expected)
 
     def test_add_event_parse_with_defaults(self):
-        results = self.myService.add_event(self.feed_with_defaults)
+        results = self.my_service.add_event(self.feed_with_defaults)
         # make_time truncates milliseconds
         # risky if we are on a break of a second
-        time = self.myService.make_time()
+        time = self.my_service.make_time()
         expected = {
             'id': 1,
             'text': "It's empty",
@@ -135,67 +136,70 @@ class EventHandlerTestCase(unittest.TestCase):
         self.assertDictEqual(results, expected)
 
     def test_add_event_append_list(self):
-        results = self.myService.add_event(self.feed_with_all)
-        self.assertListEqual(self.myService.event_list, [results])
+        results = self.my_service.add_event(self.feed_with_all)
+        self.assertListEqual(self.my_service.event_list, [results])
 
     def test_get_last_with_nine_events(self):
-        self.myService.event_list = self.sample_events[0:9]
-        results = self.myService.get_last_ten()
+        self.my_service.event_list = self.sample_events[0:9]
+        results = self.my_service.get_last_ten()
         self.assertEqual(len(results), 9)
         self.assertListEqual(results, self.sample_events[0:9])
 
     def test_get_last_with_eleven_events(self):
-        self.myService.event_list = self.sample_events
-        results = self.myService.get_last_ten()
+        self.my_service.event_list = self.sample_events
+        results = self.my_service.get_last_ten()
         self.assertEqual(len(results), 10)
         self.assertListEqual(results, self.sample_events[0:10])
 
     def test_get_last_by_field_category_below_ten(self):
-        self.myService.event_list = self.sample_events
-        results = self.myService.get_last_by_field('category', 'update')
-        expected = [self.sample_events[1], self.sample_events[2], self.sample_events[6], self.sample_events[9],
+        self.my_service.event_list = self.sample_events
+        results = self.my_service.get_last_by_field('category', 'update')
+        expected = [self.sample_events[1], self.sample_events[2],
+                    self.sample_events[6], self.sample_events[9],
                     self.sample_events[10]]
         self.assertEqual(len(results), 5)
         self.assertListEqual(results, expected)
 
     def test_get_last_by_field_category_above_ten(self):
-        self.myService.event_list = self.sample_events
+        self.my_service.event_list = self.sample_events
         for i in range(0, 6):
-            self.myService.add_event(self.feed_with_all)
-            i += 1
-        results = self.myService.get_last_by_field('category', 'update')
-        expected = self.myService.event_list[0:6] + [self.sample_events[1], self.sample_events[2],
-                   self.sample_events[6], self.sample_events[9]]
+            self.my_service.add_event(self.feed_with_all)
+        results = self.my_service.get_last_by_field('category', 'update')
+        expected = self.my_service.event_list[0:6] + [self.sample_events[1],
+                                                      self.sample_events[2],
+                                                      self.sample_events[6],
+                                                      self.sample_events[9]]
         self.assertEqual(len(results), 10)
         self.assertListEqual(results, expected)
 
     def test_get_last_by_field_person_below_ten(self):
-        self.myService.event_list = self.sample_events
-        results = self.myService.get_last_by_field('person', 'all-friends')
-        expected = [self.sample_events[0], self.sample_events[1], self.sample_events[5], self.sample_events[10]]
+        self.my_service.event_list = self.sample_events
+        results = self.my_service.get_last_by_field('person', 'all-friends')
+        expected = [self.sample_events[0], self.sample_events[1],
+                    self.sample_events[5], self.sample_events[10]]
         self.assertEqual(len(results), 4)
         self.assertListEqual(results, expected)
 
     def test_get_last_by_field_person_above_ten(self):
-        self.myService.event_list = self.sample_events
+        self.my_service.event_list = self.sample_events
         for i in range(0, 7):
-            self.myService.add_event(self.feed_with_all)
-            i += 1
-        results = self.myService.get_last_by_field('person', 'john')
-        expected = self.myService.event_list[0:7] + [self.sample_events[2], self.sample_events[3],
-                   self.sample_events[7]]
+            self.my_service.add_event(self.feed_with_all)
+        results = self.my_service.get_last_by_field('person', 'john')
+        expected = self.my_service.event_list[0:7] + [self.sample_events[2],
+                                                      self.sample_events[3],
+                                                      self.sample_events[7]]
         self.assertEqual(len(results), 10)
         self.assertListEqual(results, expected)
 
     def test_get_last_by_field_time_below_ten(self):
-        self.myService.event_list = self.sample_events
-        results = self.myService.get_last_by_field('time', 1421604081)
+        self.my_service.event_list = self.sample_events
+        results = self.my_service.get_last_by_field('time', 1421604081)
         self.assertEqual(len(results), 9)
         self.assertListEqual(results, self.sample_events[2:])
 
     def test_get_last_by_field_time_above_ten(self):
-        self.myService.event_list = self.sample_events
-        results = self.myService.get_last_by_field('time', 1421604201)
+        self.my_service.event_list = self.sample_events
+        results = self.my_service.get_last_by_field('time', 1421604201)
         self.assertEqual(len(results), 10)
         self.assertListEqual(results, self.sample_events[0:10])
 
@@ -207,7 +211,7 @@ class EventsFeedTestCaseEmptyList(unittest.TestCase):
         self.feed_with_all = "What a fantastic day #update @john"
 
     def setUp(self):
-        eventsfeed.myService.event_list = []
+        eventsfeed.my_service.event_list = []
         self.app = eventsfeed.app.test_client()
 
     @staticmethod
@@ -227,7 +231,8 @@ class EventsFeedTestCaseEmptyList(unittest.TestCase):
         self.assertEqual(results.data, "No events yet")
 
     def test_add_event(self):
-        results = self.app.post('/feeds/api/v1.0/events', data=self.feed_with_all)
+        results = self.app.post('/feeds/api/v1.0/events',
+                                data=self.feed_with_all)
         time = self.make_time()
         expected = {
             'id': 1,
@@ -359,7 +364,8 @@ class EventsFeedTestCaseFullList(unittest.TestCase):
             },
             {
                 'id': 3,
-                'text': "It should be at the beginning but time is a strange animal #update @all-friends",
+                'text': "It should be at the beginning but time is a strange "
+                        "animal #update @all-friends",
                 'category': "update",
                 'person': "all-friends",
                 'time': 1420912461
@@ -367,28 +373,37 @@ class EventsFeedTestCaseFullList(unittest.TestCase):
         ]
 
     def setUp(self):
-        eventsfeed.myService.event_list = self.sample_events
+        eventsfeed.my_service.event_list = self.sample_events
         self.app = eventsfeed.app.test_client()
 
     def test_get_last_ten_full_list(self):
         results = self.app.get('/feeds/api/v1.0/events')
-        self.assertDictEqual(json.loads(results.data), {"events": self.sample_events[0:10]})
+        self.assertDictEqual(json.loads(results.data), {
+            "events": self.sample_events[0:10]
+        })
 
     def test_get_last_ten_by_time_full_list(self):
         results = self.app.get('/feeds/api/v1.0/events/time/1421606501')
-        self.assertDictEqual(json.loads(results.data), {"events": self.sample_events[1:11]})
+        self.assertDictEqual(json.loads(results.data), {
+            "events": self.sample_events[1:11]
+        })
 
     def test_get_last_ten_by_category_full_list(self):
         results = self.app.get('/feeds/api/v1.0/events/category/update')
-        expected = self.sample_events[0:6] + [self.sample_events[7], self.sample_events[8], self.sample_events[12], self.sample_events[15]]
+        expected = self.sample_events[0:6] + [self.sample_events[7],
+                                              self.sample_events[8],
+                                              self.sample_events[12],
+                                              self.sample_events[15]]
         self.assertDictEqual(json.loads(results.data), {"events": expected})
 
     def test_get_last_ten_by_person_full_list(self):
         results = self.app.get('/feeds/api/v1.0/events/person/john')
-        expected = self.sample_events[0:6] + [self.sample_events[8], self.sample_events[9], self.sample_events[13], self.sample_events[14]]
+        expected = self.sample_events[0:6] + [self.sample_events[8],
+                                              self.sample_events[9],
+                                              self.sample_events[13],
+                                              self.sample_events[14]]
         self.assertDictEqual(json.loads(results.data), {"events": expected})
 
 
 if __name__ == '__main__':
     unittest.main()
-
