@@ -7,95 +7,99 @@ from event_handler import EventHandler
 app = Flask(__name__)
 
 events = [
-    {
-        'id': 1,
-        'text': "I just won a lottery #update @all",
-        'category': "update",
-        'person': "all",
-        'time': 1421513660
-    },
-    {
-        'id': 2,
-        'text': "It's fantastic!",
-        'category': "warn",
-        'person': "john",
-        'time': 1421603661
-    },
-    {
-        'id': 3,
-        'text': "It should be at the beginning but time is a strange animal #update @all-friends",
-        'category': "update",
-        'person': "all-friends",
-        'time': 1420912461
-    },
-    {
-        'id': 4,
-        'text': "The forth message #warn @john",
-        'category': "warn",
-        'person': "john",
-        'time': 1421603721
-    },
-    {
-        'id': 5,
-        'text': "This can be empty",
-        'category': "update",
-        'person': "all",
-        'time': 1421603781
-    },
-    {
-        'id': 6,
-        'text': "What do you think? #poll @all-friends",
-        'category': "poll",
-        'person': "all-friends",
-        'time': 1421603841
-    },
-    {
-        'id': 7,
-        'text': "Why so serious? #poll @all",
-        'category': "poll",
-        'person': "all",
-        'time': 1421603901
-    },
-    {
-        'id': 8,
-        'text': "The air is really bad today #warn @john",
-        'category': "warn",
-        'person': "john",
-        'time': 1421603961
-    },
-    {
-        'id': 9,
-        'text': "Sunday night maybe better #update @john",
-        'category': "update",
-        'person': "john",
-        'time': 1421604081
-    },
-    {
-        'id': 10,
-        'text': "It's almost Monday #update @all-friends",
-        'category': "update",
-        'person': "all-friends",
-        'time': 1421604141
-    },
-    {
-        'id': 11,
-        'text': "Will the slicing work? #poll @all-friends",
-        'category': "poll",
-        'person': "all-friends",
-        'time': 1421604201
-    }
+    # {
+    #     'id': 1,
+    #     'text': "I just won a lottery #update @all",
+    #     'category': "update",
+    #     'person': "all",
+    #     'time': 1421513660
+    # },
+    # {
+    #     'id': 2,
+    #     'text': "It's fantastic!",
+    #     'category': "warn",
+    #     'person': "john",
+    #     'time': 1421603661
+    # },
+    # {
+    #     'id': 3,
+    #     'text': "It should be at the beginning but time is a strange animal #update @all-friends",
+    #     'category': "update",
+    #     'person': "all-friends",
+    #     'time': 1420912461
+    # },
+    # {
+    #     'id': 4,
+    #     'text': "The forth message #warn @john",
+    #     'category': "warn",
+    #     'person': "john",
+    #     'time': 1421603721
+    # },
+    # {
+    #     'id': 5,
+    #     'text': "This can be empty",
+    #     'category': "update",
+    #     'person': "all",
+    #     'time': 1421603781
+    # },
+    # {
+    #     'id': 6,
+    #     'text': "What do you think? #poll @all-friends",
+    #     'category': "poll",
+    #     'person': "all-friends",
+    #     'time': 1421603841
+    # },
+    # {
+    #     'id': 7,
+    #     'text': "Why so serious? #poll @all",
+    #     'category': "poll",
+    #     'person': "all",
+    #     'time': 1421603901
+    # },
+    # {
+    #     'id': 8,
+    #     'text': "The air is really bad today #warn @john",
+    #     'category': "warn",
+    #     'person': "john",
+    #     'time': 1421603961
+    # },
+    # {
+    #     'id': 9,
+    #     'text': "Sunday night maybe better #update @john",
+    #     'category': "update",
+    #     'person': "john",
+    #     'time': 1421604081
+    # },
+    # {
+    #     'id': 10,
+    #     'text': "It's almost Monday #update @all-friends",
+    #     'category': "update",
+    #     'person': "all-friends",
+    #     'time': 1421604141
+    # },
+    # {
+    #     'id': 11,
+    #     'text': "Will the slicing work? #poll @all-friends",
+    #     'category': "poll",
+    #     'person': "all-friends",
+    #     'time': 1421604201
+    # }
 ]
 myService = EventHandler(events)
 
 @app.route('/feeds/api/v1.0/events')
 def get_last_ten():
     last_events = myService.get_last_ten()
+    if not last_events:
+        return "No events yet"
     return jsonify({'events': last_events})
 
 
 @app.route('/feeds/api/v1.0/events/<string:event_field>/<string:event_value>')
 def get_last_by_field(event_field, event_value):
     events_by_field = myService.get_last_by_field(event_field, event_value)
+    if not events_by_field:
+        return "No events yet"
     return jsonify({'events': events_by_field})
 
 

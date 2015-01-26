@@ -1,6 +1,11 @@
+from datetime import datetime
+from calendar import timegm
 import unittest
 
+from flask import Flask, json
+
 from event_handler import EventHandler
+import eventsfeed
 
 
 class EventHandlerTestCase(unittest.TestCase):
@@ -95,7 +100,11 @@ class EventHandlerTestCase(unittest.TestCase):
 
     def test_get_last_with_empty_list(self):
         results = self.myService.get_last_ten()
-        self.assertEquals(results, [])
+        self.assertEqual(results, [])
+
+    def test_get_last_by_field_empty(self):
+        results = self.myService.get_last_by_field('category', 'value')
+        self.assertEqual(results, [])
 
     def test_add_event_parse_no_defaults(self):
         results = self.myService.add_event(self.feed_with_all)
@@ -189,6 +198,195 @@ class EventHandlerTestCase(unittest.TestCase):
         results = self.myService.get_last_by_field('time', 1421604201)
         self.assertEqual(len(results), 10)
         self.assertListEqual(results, self.sample_events[0:10])
+
+
+class EventsFeedTestCaseEmptyList(unittest.TestCase):
+
+    def __init__(self, methodName):
+        unittest.TestCase.__init__(self, methodName)
+        self.feed_with_all = "What a fantastic day #update @john"
+
+    def setUp(self):
+        eventsfeed.myService.event_list = []
+        self.app = eventsfeed.app.test_client()
+
+    @staticmethod
+    def make_time():
+        # the method truncates milliseconds
+        # to fit nicely in the URL
+        time = datetime.utcnow()
+        time = timegm(time.timetuple())
+        return time
+
+    def test_get_last_ten_empty_list(self):
+        results = self.app.get('/feeds/api/v1.0/events')
+        self.assertEqual(results.data, "No events yet")
+
+    def test_get_last_by_field_empty_list(self):
+        results = self.app.get('/feeds/api/v1.0/events/category/warn')
+        self.assertEqual(results.data, "No events yet")
+
+    def test_add_event(self):
+        results = self.app.post('/feeds/api/v1.0/events', data=self.feed_with_all)
+        time = self.make_time()
+        expected = {
+            'id': 1,
+            'text': 'What a fantastic day #update @john',
+            'category': 'update',
+            'person': 'john',
+            'time': time
+        }
+        self.assertEqual(results.status, '201 CREATED')
+        self.assertDictEqual(json.loads(results.data), {"event": expected})
+
+
+class EventsFeedTestCaseFullList(unittest.TestCase):
+
+    def __init__(self, methodName):
+        unittest.TestCase.__init__(self, methodName)
+        self.sample_events = [
+            {
+                'id': 17,
+                'text': 'What a fantastic day #update @john',
+                'category': 'update',
+                'person': 'john',
+                'time': 1421607501
+            },
+            {
+                'id': 16,
+                'text': 'What a fantastic day #update @john',
+                'category': 'update',
+                'person': 'john',
+                'time': 1421606501
+            },
+            {
+                'id': 15,
+                'text': 'What a fantastic day #update @john',
+                'category': 'update',
+                'person': 'john',
+                'time': 1421606401
+            },
+            {
+                'id': 14,
+                'text': 'What a fantastic day #update @john',
+                'category': 'update',
+                'person': 'john',
+                'time': 1421605401
+            },
+            {
+                'id': 13,
+                'text': 'What a fantastic day #update @john',
+                'category': 'update',
+                'person': 'john',
+                'time': 1421605301
+            },
+            {
+                'id': 12,
+                'text': 'What a fantastic day #update @john',
+                'category': 'update',
+                'person': 'john',
+                'time': 1421604301
+            },
+            {
+                'id': 11,
+                'text': "Will the slicing work? #poll @all-friends",
+                'category': "poll",
+                'person': "all-friends",
+                'time': 1421604201
+            },
+            {
+                'id': 10,
+                'text': "It's almost Monday #update @all-friends",
+                'category': "update",
+                'person': "all-friends",
+                'time': 1421604141
+            },
+            {
+                'id': 9,
+                'text': "Sunday night maybe better #update @john",
+                'category': "update",
+                'person': "john",
+                'time': 1421604081
+            },
+            {
+                'id': 8,
+                'text': "The air is really bad today #warn @john",
+                'category': "warn",
+                'person': "john",
+                'time': 1421603961
+            },
+            {
+                'id': 7,
+                'text': "Why so serious? #poll @all",
+                'category': "poll",
+                'person': "all",
+                'time': 1421603901
+            },
+            {
+                'id': 6,
+                'text': "What do you think? #poll @all-friends",
+                'category': "poll",
+                'person': "all-friends",
+                'time': 1421603841
+            },
+            {
+                'id': 5,
+                'text': "This can be empty",
+                'category': "update",
+                'person': "all",
+                'time': 1421603781
+            },
+            {
+                'id': 4,
+                'text': "The forth message #warn @john",
+                'category': "warn",
+                'person': "john",
+                'time': 1421603721
+            },
+            {
+                'id': 2,
+                'text': "It's fantastic!",
+                'category': "warn",
+                'person': "john",
+                'time': 1421603661
+            },
+            {
+                'id': 1,
+                'text': "I just won a lottery #update @all",
+                'category': "update",
+                'person': "all",
+                'time': 1421513660
+            },
+            {
+                'id': 3,
+                'text': "It should be at the beginning but time is a strange animal #update @all-friends",
+                'category': "update",
+                'person': "all-friends",
+                'time': 1420912461
+            }
+        ]
+
+    def setUp(self):
+        eventsfeed.myService.event_list = self.sample_events
+        self.app = eventsfeed.app.test_client()
+
+    def test_get_last_ten_full_list(self):
+        results = self.app.get('/feeds/api/v1.0/events')
+        self.assertDictEqual(json.loads(results.data), {"events": self.sample_events[0:10]})
+
+    def test_get_last_ten_by_time_full_list(self):
+        results = self.app.get('/feeds/api/v1.0/events/time/1421606501')
+        self.assertDictEqual(json.loads(results.data), {"events": self.sample_events[1:11]})
+
+    def test_get_last_ten_by_category_full_list(self):
+        results = self.app.get('/feeds/api/v1.0/events/category/update')
+        expected = self.sample_events[0:6] + [self.sample_events[7], self.sample_events[8], self.sample_events[12], self.sample_events[15]]
+        self.assertDictEqual(json.loads(results.data), {"events": expected})
+
+    def test_get_last_ten_by_person_full_list(self):
+        results = self.app.get('/feeds/api/v1.0/events/person/john')
+        expected = self.sample_events[0:6] + [self.sample_events[8], self.sample_events[9], self.sample_events[13], self.sample_events[14]]
+        self.assertDictEqual(json.loads(results.data), {"events": expected})
 
 
 if __name__ == '__main__':
