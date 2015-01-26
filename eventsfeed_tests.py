@@ -111,7 +111,7 @@ class EventHandlerTestCase(unittest.TestCase):
         results = self.my_service.add_event(self.feed_with_all)
         # make_time truncates milliseconds
         # risky if we are on a break of a second
-        time = self.my_service.make_time()
+        time = EventHandler.make_time()
         expected = {
             'id': 1,
             'text': 'What a fantastic day #update @john',
@@ -125,7 +125,7 @@ class EventHandlerTestCase(unittest.TestCase):
         results = self.my_service.add_event(self.feed_with_defaults)
         # make_time truncates milliseconds
         # risky if we are on a break of a second
-        time = self.my_service.make_time()
+        time = EventHandler.make_time()
         expected = {
             'id': 1,
             'text': "It's empty",
@@ -214,14 +214,6 @@ class EventsFeedTestCaseEmptyList(unittest.TestCase):
         eventsfeed.my_service.event_list = []
         self.app = eventsfeed.app.test_client()
 
-    @staticmethod
-    def make_time():
-        # the method truncates milliseconds
-        # to fit nicely in the URL
-        time = datetime.utcnow()
-        time = timegm(time.timetuple())
-        return time
-
     def test_get_last_ten_empty_list(self):
         results = self.app.get('/feeds/api/v1.0/events')
         self.assertEqual(results.data, "No events yet")
@@ -233,7 +225,7 @@ class EventsFeedTestCaseEmptyList(unittest.TestCase):
     def test_add_event(self):
         results = self.app.post('/feeds/api/v1.0/events',
                                 data=self.feed_with_all)
-        time = self.make_time()
+        time = EventHandler.make_time()
         expected = {
             'id': 1,
             'text': 'What a fantastic day #update @john',
